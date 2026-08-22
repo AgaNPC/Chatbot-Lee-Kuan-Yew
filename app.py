@@ -138,7 +138,7 @@ def respond_as_lky(user_message: str, history: List[Dict[str, str]], api_key: st
     return "", history, sources_formatted, eval_formatted
 
 # Build Gradio UI
-with gr.Blocks(theme=gr.themes.Soft(primary_hue="red", neutral_hue="slate"), title="What Would Lee Kuan Yew Do? (WwLKYD)") as demo:
+with gr.Blocks(title="What Would Lee Kuan Yew Do? (WwLKYD)") as demo:
     gr.Markdown("""
     # 🇸🇬 What Would Lee Kuan Yew Do? (WwLKYD)
     ### AI Chatbot trained on Lee Kuan Yew's Speeches, Memoirs, and Articles (RAG & Eval Enabled)
@@ -146,7 +146,7 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="red", neutral_hue="slate"), tit
     
     with gr.Row():
         with gr.Column(scale=3):
-            chatbot = gr.Chatbot(label="Conversation with Lee Kuan Yew", type="messages", height=450)
+            chatbot = gr.Chatbot(label="Conversation with Lee Kuan Yew", height=450)
 
             
             with gr.Row():
