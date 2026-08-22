@@ -78,10 +78,14 @@ Guidelines:
 3. Be candid, direct, and unvarnished. Do not use overly fluffy or apologetic language.
 4. If asked about life or personal philosophy, reflect on hard work, resilience, and standing up for principles."""
 
-def respond_as_lky(user_message: str, history: List[Tuple[str, str]], api_key: str):
+def respond_as_lky(user_message: str, history: List[Dict[str, str]], api_key: str):
     if not user_message.strip():
         return "", history, "No source retrieved.", "Waiting for prompt..."
     
+    # Ensure history is a list
+    if history is None:
+        history = []
+
     # Retrieve Context
     retrieved_docs = get_relevant_docs(user_message, top_k=2)
     context_str = "\n\n".join([f"--- Source: {doc['title']} ({doc['source']}) ---\n{doc['content']}" for doc in retrieved_docs])
@@ -100,9 +104,12 @@ def respond_as_lky(user_message: str, history: List[Tuple[str, str]], api_key: s
             client = OpenAI(api_key=effective_api_key)
             messages = [{"role": "system", "content": f"{SYSTEM_PERSONA}\n\nCONTEXT EXCERPTS FROM YOUR SPEECHES & MEMOIRS:\n{context_str}"}]
             
-            for user_h, bot_h in history:
-                messages.append({"role": "user", "content": user_h})
-                messages.append({"role": "assistant", "content": bot_h})
+            for msg in history:
+                if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                    messages.append({"role": msg["role"], "content": msg["content"]})
+                elif isinstance(msg, (list, tuple)) and len(msg) == 2:
+                    messages.append({"role": "user", "content": msg[0]})
+                    messages.append({"role": "assistant", "content": msg[1]})
                 
             messages.append({"role": "user", "content": user_message})
             
@@ -115,8 +122,9 @@ def respond_as_lky(user_message: str, history: List[Tuple[str, str]], api_key: s
         except Exception as e:
             response_text = f"Error generating response: {str(e)}"
 
-    # Update Chat History
-    history.append((user_message, response_text))
+    # Update Chat History in Gradio messages format
+    history.append({"role": "user", "content": user_message})
+    history.append({"role": "assistant", "content": response_text})
     
     # Calculate RAG Evaluation Metrics
     eval_metrics = evaluate_rag_response(user_message, context_str, response_text)
@@ -138,7 +146,8 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="red", neutral_hue="slate"), tit
     
     with gr.Row():
         with gr.Column(scale=3):
-            chatbot = gr.Chatbot(label="Conversation with Lee Kuan Yew", height=450)
+            chatbot = gr.Chatbot(label="Conversation with Lee Kuan Yew", type="messages", height=450)
+
             
             with gr.Row():
                 msg_input = gr.Textbox(
